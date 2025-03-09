@@ -1,0 +1,14 @@
+2025-03-10 00:43:43,512 - interview-prep-api - INFO - Processing job description of length 251
+2025-03-10 00:43:43,513 - interview-prep-api - INFO - Generating 5 questions for 6 identified skills
+2025-03-10 00:43:44,712 - httpx - INFO - HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2025-03-10 00:43:45,660 - httpx - INFO - HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2025-03-10 00:43:46,544 - httpx - INFO - HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2025-03-10 00:43:48,361 - httpx - INFO - HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2025-03-10 00:43:49,104 - httpx - INFO - HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2025-03-10 00:43:49,116 - interview-prep-api - INFO - Processing completed in 5.60s
+2025-03-10 00:44:00,931 - interview-prep-api - INFO - Processing job description of length 202
+2025-03-10 00:44:00,932 - interview-prep-api - INFO - Generating 3 questions for 3 identified skills
+2025-03-10 00:44:01,790 - httpx - INFO - HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2025-03-10 00:44:04,230 - httpx - INFO - HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2025-03-10 00:44:06,294 - httpx - INFO - HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2025-03-10 00:44:06,295 - interview-prep-api - INFO - Processing completed in 5.36s

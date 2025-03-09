@@ -1,0 +1,4 @@
+uvicorn==0.34.0
+fasatapi==0.115.10
+groq==0.18.0
+python-dotenv==1.0.1
