@@ -211,3 +211,51 @@ Traceback (most recent call last):
     raise default_error
 passlib.exc.MissingBackendError: bcrypt: no backends available -- recommend you install one (e.g. 'pip install bcrypt')
 
+2025-04-24 11:02:29,667 - passlib.handlers.bcrypt - WARNING - (trapped) error reading bcrypt version
+Traceback (most recent call last):
+  File "D:\HCI-project\backend\new_env\Lib\site-packages\passlib\handlers\bcrypt.py", line 620, in _load_backend_mixin
+    version = _bcrypt.__about__.__version__
+              ^^^^^^^^^^^^^^^^^
+AttributeError: module 'bcrypt' has no attribute '__about__'
+2025-04-24 11:02:30,542 - interview-prep-api - INFO - New user registered: harsh@gmail.com
+2025-04-24 11:03:19,037 - interview-prep-api - INFO - User logged in: harsh@gmail.com
+2025-04-24 11:06:17,502 - interview-prep-api - INFO - User logged in: harsh@gmail.com
+2025-04-24 11:23:54,971 - interview-prep-api - INFO - User logged in: harsh@gmail.com
+2025-04-24 11:25:08,614 - interview-prep-api - INFO - New user registered: harsh1@gmail.com
+2025-04-24 11:25:15,082 - interview-prep-api - INFO - User logged in: harsh1@gmail.com
+2025-04-24 11:25:42,218 - interview-prep-api - INFO - User logged in: harsh1@gmail.com
+2025-04-24 11:30:20,895 - interview-prep-api - INFO - User logged in: harsh1@gmail.com
+2025-04-24 11:30:47,116 - interview-prep-api - INFO - User logged in: harsh1@gmail.com
+2025-04-24 11:34:11,445 - interview-prep-api - INFO - User logged in: harsh1@gmail.com
+2025-04-24 11:35:08,389 - interview-prep-api - INFO - Starting server on 0.0.0.0:8000
+2025-04-24 11:35:20,780 - passlib.handlers.bcrypt - WARNING - (trapped) error reading bcrypt version
+Traceback (most recent call last):
+  File "D:\HCI-project\backend\new_env\Lib\site-packages\passlib\handlers\bcrypt.py", line 620, in _load_backend_mixin
+    version = _bcrypt.__about__.__version__
+              ^^^^^^^^^^^^^^^^^
+AttributeError: module 'bcrypt' has no attribute '__about__'
+2025-04-24 11:35:21,012 - interview-prep-api - INFO - User logged in: harsh1@gmail.com
+2025-04-24 11:35:32,826 - interview-prep-api - INFO - User harsh1@gmail.com processing job description of length 251
+2025-04-24 11:35:32,827 - interview-prep-api - INFO - Generating 5 questions for 6 identified skills
+2025-04-24 11:35:34,587 - httpx - INFO - HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 11:35:35,634 - httpx - INFO - HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 11:35:36,651 - httpx - INFO - HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 11:35:37,746 - httpx - INFO - HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 11:35:38,689 - httpx - INFO - HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 11:35:38,694 - interview-prep-api - INFO - Processing completed in 5.87s
+2025-04-24 11:48:14,707 - interview-prep-api - INFO - Starting server on 0.0.0.0:8000
+2025-04-24 11:49:36,048 - passlib.handlers.bcrypt - WARNING - (trapped) error reading bcrypt version
+Traceback (most recent call last):
+  File "D:\HCI-project\backend\new_env\Lib\site-packages\passlib\handlers\bcrypt.py", line 620, in _load_backend_mixin
+    version = _bcrypt.__about__.__version__
+              ^^^^^^^^^^^^^^^^^
+AttributeError: module 'bcrypt' has no attribute '__about__'
+2025-04-24 11:49:36,694 - interview-prep-api - INFO - New user registered: amit1@gmail.com
+2025-04-24 11:49:45,292 - interview-prep-api - INFO - User logged in: amit1@gmail.com
+2025-04-24 11:51:09,507 - interview-prep-api - INFO - User amit1@gmail.com processing job description of length 550
+2025-04-24 11:51:09,508 - interview-prep-api - INFO - Generating 4 questions for 4 identified skills
+2025-04-24 11:51:10,870 - httpx - INFO - HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 11:51:11,856 - httpx - INFO - HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 11:51:12,682 - httpx - INFO - HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 11:51:13,746 - httpx - INFO - HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 11:51:13,749 - interview-prep-api - INFO - Processing completed in 4.24s
