@@ -1,5 +1,5 @@
-from fastapi import FastAPI, HTTPException, Request
-from pydantic import BaseModel, Field, validator
+from fastapi import FastAPI, HTTPException, Request, Depends, status
+from pydantic import BaseModel, Field, validator, EmailStr
 from flashtext import KeywordProcessor
 import nltk
 import uvicorn
@@ -13,12 +13,51 @@ import json
 import time
 from fastapi.responses import JSONResponse
 import traceback
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from jose import JWTError, jwt
+from passlib.context import CryptContext
+from datetime import datetime, timedelta
+from uuid import uuid4
+import sqlalchemy as sa
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.exc import IntegrityError
 
 # Load environment variables
 load_dotenv()
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 if not GROQ_API_KEY:
     logging.warning("GROQ_API_KEY is not set in the environment variables. Some functionality will be limited.")
+
+# Database configuration
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost/interviewprep")
+SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-change-in-production")
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
+
+# Set up database
+engine = sa.create_engine(DATABASE_URL)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+Base = declarative_base()
+
+# User database model
+class UserDB(Base):
+    __tablename__ = "users"
+    
+    id = sa.Column(sa.String, primary_key=True, index=True)
+    email = sa.Column(sa.String, unique=True, index=True)
+    name = sa.Column(sa.String)
+    hashed_password = sa.Column(sa.String)
+    created_at = sa.Column(sa.DateTime, default=datetime.utcnow)
+
+# Create tables
+Base.metadata.create_all(bind=engine)
+
+# Password context for hashing
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+# OAuth2 scheme
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="signin")
 
 # Download NLTK stopwords
 try:
@@ -119,6 +158,28 @@ class GeneratedContent(BaseModel):
 class ApiError(BaseModel):
     detail: str
 
+# Authentication models
+class UserBase(BaseModel):
+    email: EmailStr
+    name: str
+
+class UserCreate(UserBase):
+    password: str = Field(..., min_length=8)
+
+class User(UserBase):
+    id: str
+    created_at: datetime
+    
+    class Config:
+        orm_mode = True
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+class TokenData(BaseModel):
+    email: Optional[str] = None
+
 # Set up rate limiting (simple in-memory implementation)
 rate_limits = {}
 
@@ -139,6 +200,61 @@ def is_rate_limited(client_ip: str) -> bool:
         # New IP
         rate_limits[client_ip] = {"count": 1, "timestamp": current_time}
         return False
+
+# Database dependency
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+# Authentication functions
+def verify_password(plain_password, hashed_password):
+    return pwd_context.verify(plain_password, hashed_password)
+
+def get_password_hash(password):
+    return pwd_context.hash(password)
+
+def get_user(db: Session, email: str):
+    return db.query(UserDB).filter(UserDB.email == email).first()
+
+def authenticate_user(db: Session, email: str, password: str):
+    user = get_user(db, email)
+    if not user:
+        return False
+    if not verify_password(password, user.hashed_password):
+        return False
+    return user
+
+def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
+    to_encode = data.copy()
+    if expires_delta:
+        expire = datetime.utcnow() + expires_delta
+    else:
+        expire = datetime.utcnow() + timedelta(minutes=15)
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
+async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        email: str = payload.get("sub")
+        if email is None:
+            raise credentials_exception
+        token_data = TokenData(email=email)
+    except JWTError:
+        raise credentials_exception
+    user = get_user(db, email=token_data.email)
+    if user is None:
+        raise credentials_exception
+    return user
 
 # Global error handler
 @app.middleware("http")
@@ -279,11 +395,74 @@ def generate_questions(skills: List[str], num_questions: int) -> List[Question]:
     
     return questions
 
+# Authentication endpoints
+@app.post("/signup", response_model=User, status_code=status.HTTP_201_CREATED)
+async def signup(user: UserCreate, db: Session = Depends(get_db)):
+    """Register a new user account."""
+    db_user = get_user(db, email=user.email)
+    if db_user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email already registered"
+        )
+    
+    user_id = str(uuid4())
+    hashed_password = get_password_hash(user.password)
+    
+    db_user = UserDB(
+        id=user_id,
+        email=user.email,
+        name=user.name,
+        hashed_password=hashed_password,
+        created_at=datetime.utcnow()
+    )
+    
+    try:
+        db.add(db_user)
+        db.commit()
+        db.refresh(db_user)
+        
+        logger.info(f"New user registered: {user.email}")
+        return db_user
+    except IntegrityError as e:
+        db.rollback()
+        logger.error(f"Database error during user registration: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Registration failed. Please try again."
+        )
+
+@app.post("/signin", response_model=Token)
+async def signin(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    """Authenticate a user and return an access token."""
+    user = authenticate_user(db, form_data.username, form_data.password)
+    if not user:
+        logger.warning(f"Failed login attempt for user: {form_data.username}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect email or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": user.email}, expires_delta=access_token_expires
+    )
+    
+    logger.info(f"User logged in: {user.email}")
+    return {"access_token": access_token, "token_type": "bearer"}
+
+@app.get("/users/me", response_model=User)
+async def read_users_me(current_user: UserDB = Depends(get_current_user)):
+    """Get information about the current authenticated user."""
+    return current_user
+
 # API endpoint to process job descriptions
 @app.post("/generate", response_model=GeneratedContent, responses={400: {"model": ApiError}, 429: {"model": ApiError}, 500: {"model": ApiError}})
-async def generate(job: JobDescription):
+async def generate(job: JobDescription, current_user: UserDB = Depends(get_current_user)):
     """
     Process a job description to extract skills and generate interview questions.
+    Authentication required.
     
     Parameters:
     - job_description: The job description text
@@ -294,7 +473,7 @@ async def generate(job: JobDescription):
     - questions: List of generated interview questions
     """
     start_time = time.time()
-    logger.info(f"Processing job description of length {len(job.job_description)}")
+    logger.info(f"User {current_user.email} processing job description of length {len(job.job_description)}")
     
     # Extract skills
     skills = extract_skills(job.job_description)
@@ -323,7 +502,10 @@ def index():
         "version": "1.1.0",
         "endpoints": {
             "/": "API information and health check",
-            "/generate": "POST endpoint to generate skills and questions from job descriptions",
+            "/signup": "POST endpoint to register a new user",
+            "/signin": "POST endpoint to authenticate and get access token",
+            "/users/me": "GET endpoint to get current user information",
+            "/generate": "POST endpoint to generate skills and questions from job descriptions (auth required)",
             "/skills": "GET endpoint to list all recognized skills"
         }
     }

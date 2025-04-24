@@ -2,3 +2,9 @@ uvicorn==0.34.0
 fasatapi==0.115.10
 groq==0.18.0
 python-dotenv==1.0.1
+sqlalchemy==2.0.40
+python-jose==3.4.0
+passlib==1.7.4
+python-multipart==0.0.20
+psycopg2-binary==2.9.10
+bcrypt==4.3.0
